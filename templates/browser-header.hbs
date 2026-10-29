@@ -1,0 +1,30 @@
+<header class="gdms-header">
+  <div class="gdms-row">
+    <input type="search" name="query" value="{{state.query}}" placeholder="{{localize 'GDMS.SearchPlaceholder'}}" autofocus>
+    <select name="kind">
+      {{#each kinds}}<option value="{{value}}" {{#if (eq value ../state.kind)}}selected{{/if}}>{{label}}</option>{{/each}}
+    </select>
+    <select name="folder">
+      <option value="">{{localize "GDMS.AllFolders"}}</option>
+      {{#each folders}}<option value="{{this}}" {{#if (eq this ../state.folder)}}selected{{/if}}>{{this}}</option>{{/each}}
+    </select>
+  </div>
+  <div class="gdms-row gdms-toolbar">
+    <span class="gdms-status">{{#if building}}{{#if progress}}{{progress}}{{else}}{{localize "GDMS.Status.Building"}}{{/if}}{{else}}{{status}}{{/if}}</span>
+    {{#if isGM}}
+    <button type="button" data-action="refreshIndex" {{#if building}}disabled{{/if}} data-tooltip="{{localize 'GDMS.RefreshHint'}}">
+      <i class="fa-solid fa-rotate {{#if building}}fa-spin{{/if}}"></i> {{localize "GDMS.Refresh"}}
+    </button>
+    {{#if canSignIn}}
+      {{#if signedIn}}
+      <button type="button" data-action="upload" data-tooltip="{{localize 'GDMS.UploadHint'}}"><i class="fa-solid fa-cloud-arrow-up"></i> {{localize "GDMS.Upload"}}</button>
+      <button type="button" data-action="signOut" data-tooltip="{{localize 'GDMS.SignOut'}}"><i class="fa-solid fa-right-from-bracket"></i></button>
+      {{else}}
+      <button type="button" data-action="signIn"><i class="fa-brands fa-google"></i> {{localize "GDMS.SignIn"}}</button>
+      {{/if}}
+    {{/if}}
+    <button type="button" data-action="settings" data-tooltip="{{localize 'GDMS.Settings.Title'}}"><i class="fa-solid fa-gear"></i></button>
+    <input type="file" name="files" multiple hidden>
+    {{/if}}
+  </div>
+</header>

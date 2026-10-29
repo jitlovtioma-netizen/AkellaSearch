@@ -1,0 +1,153 @@
+{
+  "GDMS": {
+    "Title": "Google Drive Media",
+    "Keybinding": "Open Google Drive media search",
+    "SearchPlaceholder": "Search names and folders…",
+    "AllFolders": "All folders",
+    "Refresh": "Refresh index",
+    "RefreshHint": "Scan the Google Drive folder again",
+    "Upload": "Upload",
+    "UploadHint": "Upload files into the selected Drive folder (you can also drop files on this window)",
+    "SignIn": "Sign in with Google",
+    "SignOut": "Sign out of Google",
+    "EmptyIndex": "No index yet. Set the API key in the module settings and click “Refresh index”.",
+    "Found": "Found",
+    "HasPack": "A scene pack (walls, lights, sounds) sits next to this map",
+    "Cached": "Already copied to the Foundry server",
+    "LoadMore": "Show more",
+    "Cancel": "Cancel",
+    "Status": {
+      "Building": "Scanning Drive…",
+      "Indexed": "{count} files indexed (updated {date})",
+      "NoIndex": "No index",
+      "Scanning": "Scanning: {scanned} folders, {found} found"
+    },
+    "Kind": {
+      "all": "All types",
+      "image": "Images",
+      "video": "Video",
+      "audio": "Audio",
+      "scene": "Scenes",
+      "other": "Other"
+    },
+    "Action": {
+      "Tile": "Place as a tile at screen centre (or drag onto the canvas)",
+      "Scene": "Create a scene with this map",
+      "ImportPack": "Import the scene with walls, lights and sounds",
+      "Play": "Preview",
+      "Sound": "Place an ambient sound at screen centre (or drag onto the canvas)",
+      "Playlist": "Add to playlist",
+      "Copy": "Download and copy path",
+      "Drive": "Open in Google Drive"
+    },
+    "Playlist": {
+      "Title": "Add to playlist",
+      "Choose": "Playlist",
+      "New": "New playlist",
+      "Repeat": "Repeat",
+      "Add": "Add"
+    },
+    "Notify": {
+      "Copied": "Path copied: {path}",
+      "AddedToPlaylist": "“{name}” added to “{playlist}”",
+      "Uploading": "Uploading {count} files to {folder}…",
+      "Uploaded": "Uploaded {count} files",
+      "IndexBuilt": "Google Drive index updated: {count} files",
+      "Downloading": "Downloading {name}…",
+      "Importing": "Importing {name}, downloading media…",
+      "MissingMedia": "{count} files were not found. See the console (F12).",
+      "Imported": "Imported {count} scenes",
+      "Exporting": "Uploading scene {name} to Google Drive…",
+      "Exported": "Scene “{name}” uploaded to Drive, {count} files"
+    },
+    "Errors": {
+      "NoClientId": "No OAuth Client ID in the module settings.",
+      "SignInRequired": "Sign in with Google to upload (button in the search window).",
+      "NoCredentials": "Set a Google API key in the module settings or sign in with Google.",
+      "NoFolder": "No Google Drive folder in the module settings.",
+      "BadJson": "The file is not valid JSON.",
+      "NotAScene": "No scene data found in the file.",
+      "NoScene": "Open a scene first.",
+      "CannotPlace": "This file type cannot be placed on the canvas."
+    },
+    "Import": {
+      "Title": "Import scene",
+      "Button": "Import",
+      "Name": "Name",
+      "Tokens": "Import tokens",
+      "ConvertLevels": "Convert Levels-module floors into V14 levels",
+      "Activate": "Activate the scene for players",
+      "Level": "Level",
+      "AllLevels": "All levels (one scene each)",
+      "LevelHint": "This scene was made in V14 with several levels. V13 has no levels, so each level becomes its own scene.",
+      "NoPlaceables": "Map only, no placeables",
+      "Count": {
+        "walls": "Walls",
+        "tiles": "Tiles",
+        "lights": "Lights",
+        "sounds": "Sounds",
+        "notes": "Notes",
+        "drawings": "Drawings",
+        "regions": "Regions",
+        "tokens": "Tokens",
+        "templates": "Templates"
+      }
+    },
+    "Convert": {
+      "Title": "Convert to V14 levels",
+      "Button": "Convert",
+      "NeedV14": "Level conversion needs Foundry V14. In V13, upload the scene to Drive and import it in V14.",
+      "Found": "Levels-module floors found. These levels will be created:",
+      "NotFound": "No Levels-module data found. One level will be set up:",
+      "Floor": "Floor",
+      "Stairs": "Stairs",
+      "Surface": "Floor",
+      "Duplicate": "Work on a copy (keep the original)",
+      "Promote": "Use the full-size floor tile as the level background",
+      "Surfaces": "Create floor surfaces for upper floors (with Levels holes)",
+      "StairsOption": "Turn Levels stairs and elevators into Change Level regions",
+      "Visibility": "Upper floors can see the floors below",
+      "Done": "“{name}”: {levels} levels, {tagged} placeables tagged, {stairs} stairs, {surfaces} surfaces, {promoted} backgrounds, {holes} holes",
+      "StepFailed": "Conversion step “{step}” failed: {error}"
+    },
+    "Context": {
+      "Export": "Upload to Google Drive (scene pack)",
+      "Convert": "Convert to V14 levels"
+    },
+    "Settings": {
+      "Title": "Module settings",
+      "rootFolder": {
+        "Name": "Google Drive folder",
+        "Hint": "Folder link or ID. For API-key browsing the folder must be shared with anyone who has the link."
+      },
+      "apiKey": {
+        "Name": "Google API key",
+        "Hint": "A Google Cloud key with the Google Drive API enabled. Needed to browse and download."
+      },
+      "oauthClientId": {
+        "Name": "OAuth Client ID",
+        "Hint": "Only needed to upload files and scenes. Type “Web application”; add your Foundry address to Authorized JavaScript origins."
+      },
+      "storageSource": {
+        "Name": "Foundry storage",
+        "Hint": "Where files downloaded from Drive are saved."
+      },
+      "cacheFolder": {
+        "Name": "Cache folder",
+        "Hint": "Folder in Foundry storage that Drive files are copied into."
+      },
+      "exportFolderName": {
+        "Name": "Scene pack folder",
+        "Hint": "Drive subfolder that scenes are uploaded into."
+      },
+      "soundRadius": {
+        "Name": "Sound radius",
+        "Hint": "Ambient sound radius (scene units) when dropping audio."
+      },
+      "playersCanBrowse": {
+        "Name": "Players can browse",
+        "Hint": "Show the search window to players (placing still needs the matching permissions)."
+      }
+    }
+  }
+}

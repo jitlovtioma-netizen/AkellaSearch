@@ -1,0 +1,33 @@
+name: Release
+
+# Publishing a GitHub release (tag like v1.0.1) builds the module zip and attaches
+# module.json + akella-search.zip, so Foundry can install and update from the manifest URL.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set version and download URL in module.json
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          REPO="https://github.com/${GITHUB_REPOSITORY}"
+          jq --arg v "$VERSION" \
+             --arg m "$REPO/releases/latest/download/module.json" \
+             --arg d "$REPO/releases/download/${GITHUB_REF_NAME}/akella-search.zip" \
+             '.version = $v | .manifest = $m | .download = $d' module.json > module.tmp && mv module.tmp module.json
+
+      - name: Build zip
+        run: zip -r akella-search.zip module.json README.md scripts templates styles lang
+
+      - name: Upload assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" module.json akella-search.zip --clobber

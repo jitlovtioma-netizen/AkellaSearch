@@ -1,0 +1,44 @@
+<section class="gdms-body">
+  {{#unless loaded}}
+  <div class="gdms-empty">
+    <i class="fa-brands fa-google-drive"></i>
+    <p>{{localize "GDMS.EmptyIndex"}}</p>
+  </div>
+  {{else}}
+  <div class="gdms-summary">
+    {{#if state.folder}}<a data-action="setFolder" data-folder=""><i class="fa-solid fa-xmark"></i> {{state.folder}}</a> · {{/if}}
+    {{localize "GDMS.Found"}}: {{total}}
+  </div>
+  <div class="gdms-results">
+    {{#each items}}
+    <div class="gdms-card gdms-{{kind}}" data-id="{{id}}" draggable="true" data-tooltip="{{path}}/{{name}}">
+      <div class="gdms-thumb" {{#if isVisual}}data-action="preview"{{/if}}{{#if isAudio}}data-action="play"{{/if}}{{#if isScene}}data-action="importPack"{{/if}}>
+        {{#if thumb}}<img src="{{thumb}}" loading="lazy" alt="" onerror="this.remove()">{{/if}}
+        <i class="fa-solid {{icon}} gdms-kind-icon"></i>
+        {{#if hasPack}}<span class="gdms-badge" data-tooltip="{{localize 'GDMS.HasPack'}}"><i class="fa-solid fa-dungeon"></i></span>{{/if}}
+        {{#if cached}}<span class="gdms-badge gdms-badge-left" data-tooltip="{{localize 'GDMS.Cached'}}"><i class="fa-solid fa-hard-drive"></i></span>{{/if}}
+      </div>
+      <div class="gdms-name">{{name}}</div>
+      <a class="gdms-path" data-action="setFolder" data-folder="{{path}}">{{path}}</a>
+      <div class="gdms-actions">
+        {{#if isVisual}}
+          <a data-action="place" data-tooltip="{{localize 'GDMS.Action.Tile'}}"><i class="fa-solid fa-cubes"></i></a>
+          {{#if isGM}}<a data-action="createScene" data-tooltip="{{#if hasPack}}{{localize 'GDMS.Action.ImportPack'}}{{else}}{{localize 'GDMS.Action.Scene'}}{{/if}}"><i class="fa-solid fa-map"></i></a>{{/if}}
+        {{/if}}
+        {{#if isAudio}}
+          <a data-action="play" data-tooltip="{{localize 'GDMS.Action.Play'}}"><i class="fa-solid fa-play"></i></a>
+          <a data-action="place" data-tooltip="{{localize 'GDMS.Action.Sound'}}"><i class="fa-solid fa-volume-high"></i></a>
+          {{#if isGM}}<a data-action="addToPlaylist" data-tooltip="{{localize 'GDMS.Action.Playlist'}}"><i class="fa-solid fa-list-music"></i></a>{{/if}}
+        {{/if}}
+        {{#if isScene}}
+          {{#if isGM}}<a data-action="importPack" data-tooltip="{{localize 'GDMS.Action.ImportPack'}}"><i class="fa-solid fa-dungeon"></i></a>{{/if}}
+        {{/if}}
+        <a data-action="copyPath" data-tooltip="{{localize 'GDMS.Action.Copy'}}"><i class="fa-solid fa-copy"></i></a>
+        <a data-action="openDrive" data-tooltip="{{localize 'GDMS.Action.Drive'}}"><i class="fa-brands fa-google-drive"></i></a>
+      </div>
+    </div>
+    {{/each}}
+  </div>
+  {{#if hasMore}}<button type="button" class="gdms-more" data-action="loadMore">{{localize "GDMS.LoadMore"}}</button>{{/if}}
+  {{/unless}}
+</section>
