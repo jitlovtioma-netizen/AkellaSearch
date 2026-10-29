@@ -76,7 +76,7 @@ export class MediaBrowser extends HandlebarsApplicationMixin(ApplicationV2) {
       signedIn: drive.isSignedIn(),
       canSignIn: drive.canSignIn(),
       canUpload: game.user.isGM && drive.isSignedIn(),
-      kinds: [{ value: "all", label: localize("Kind.all") }, ...KINDS.map(k => ({ value: k, label: localize(`Kind.${k}`) }))],
+      kinds: [{ value: "all", label: localize("Kind.all") }, { value: "ready", label: localize("Kind.ready") }, ...KINDS.map(k => ({ value: k, label: localize(`Kind.${k}`) }))],
       folders: mediaIndex.folders,
       loaded: mediaIndex.loaded,
       building: mediaIndex.building,
@@ -96,6 +96,11 @@ export class MediaBrowser extends HandlebarsApplicationMixin(ApplicationV2) {
     let thumb = null;
     if (entry.kind === "image") thumb = local ?? drive.thumbnailUrl(entry.id);
     else if (entry.kind === "video") thumb = drive.thumbnailUrl(entry.id);
+    else if (entry.kind === "scene") {
+      // A scene pack shows its map, so it is easy to tell what it is.
+      const map = mediaIndex.mapFor(entry);
+      if (map) thumb = (map.kind === "image" ? cachedPath(map) : null) ?? drive.thumbnailUrl(map.id);
+    }
     return {
       id: entry.id,
       name: entry.name,
@@ -105,6 +110,7 @@ export class MediaBrowser extends HandlebarsApplicationMixin(ApplicationV2) {
       thumb,
       cached: !!local,
       hasPack: !!pack,
+      ready: !!pack || entry.kind === "scene",
       isVisual: entry.kind === "image" || entry.kind === "video",
       isAudio: entry.kind === "audio",
       isScene: entry.kind === "scene",

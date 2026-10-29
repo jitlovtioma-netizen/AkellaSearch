@@ -56,10 +56,15 @@ class MediaIndex {
     for (const e of this.entries) if (e.kind === "folder") this.folderIds.set(e.path ? `${e.path}/${e.name}` : e.name, e.id);
     // Which folders contain scene data files, by basename. Used to mark maps that ship as full scene packs.
     this.scenesByFolder = new Map();
+    this.imagesByFolder = new Map();
     for (const e of this.entries) {
-      if (e.kind !== "scene") continue;
-      if (!this.scenesByFolder.has(e.path)) this.scenesByFolder.set(e.path, new Map());
-      this.scenesByFolder.get(e.path).set(basename(e.name).toLowerCase(), e);
+      const target = e.kind === "scene" ? this.scenesByFolder : e.kind === "image" || e.kind === "video" ? this.imagesByFolder : null;
+      if (!target) continue;
+      if (!target.has(e.path)) target.set(e.path, new Map());
+      const byName = target.get(e.path);
+      const key = basename(e.name).toLowerCase();
+      // Prefer webp/images over videos when both share a name.
+      if (!byName.has(key) || (byName.get(key).kind === "video" && e.kind === "image")) byName.set(key, e);
     }
     this.loaded = true;
   }
@@ -74,6 +79,26 @@ class MediaIndex {
     return this.scenesByFolder?.get(entry.path)?.get(basename(entry.name).toLowerCase()) ?? null;
   }
 
+  /** The map image of a scene data file: same name in the same folder, else the closest name there. */
+  mapFor(scene) {
+    if (scene?.kind !== "scene") return null;
+    const images = this.imagesByFolder?.get(scene.path);
+    if (!images?.size) return null;
+    const key = basename(scene.name).toLowerCase();
+    if (images.has(key)) return images.get(key);
+    let best = null;
+    let bestScore = 0;
+    for (const [name, entry] of images) {
+      let n = 0;
+      while (n < name.length && n < key.length && name[n] === key[n]) n++;
+      if (n > bestScore) {
+        best = entry;
+        bestScore = n;
+      }
+    }
+    return bestScore >= 4 ? best : images.size === 1 ? images.values().next().value : null;
+  }
+
   /** Files inside a folder path and all of its subfolders. */
   subtree(path) {
     if (!path) return this.entries.filter(e => e.kind !== "folder");
@@ -84,7 +109,9 @@ class MediaIndex {
     const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
     return this.entries.filter(e => {
       if (e.kind === "folder") return false;
-      if (kind !== "all" && e.kind !== kind) return false;
+      if (kind === "ready") {
+        if (e.kind !== "scene") return false;
+      } else if (kind !== "all" && e.kind !== kind) return false;
       if (folder && e.path !== folder && !e.path.startsWith(`${folder}/`)) return false;
       return terms.every(t => e.search.includes(t));
     }).sort((a, b) => a.path.localeCompare(b.path) || a.name.localeCompare(b.name));

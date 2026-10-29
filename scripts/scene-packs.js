@@ -9,7 +9,7 @@
 import { MODULE_ID, DialogV2, esc, hasNativeLevels, loadTex, localize, mapLimit, notify, notifyProgress } from "./compat.js";
 export { notifyProgress };
 import { getSetting, setSetting, uploadConcurrency } from "./settings.js";
-import { UploadSession, authorDatalist, destination, mapGroupName } from "./uploader.js";
+import { UploadSession, authorDatalist, destination } from "./uploader.js";
 import * as drive from "./drive.js";
 import { cacheRoot, ensureLocal, localFileExists, sanitize, storeBlob } from "./cache.js";
 import { basename, classify, extension, mediaIndex } from "./media-index.js";
@@ -412,13 +412,13 @@ function backgroundPaths(data) {
  * @param {UploadSession} options.session
  * @param {Function} [options.onProgress]
  */
-export async function exportSceneData(data, { author, packName, session, onProgress, group = false } = {}) {
+export async function exportSceneData(data, { author, packName, session, onProgress, folder = "" } = {}) {
   data = foundry.utils.deepClone(data);
   for (const key of ["_id", "_stats", "ownership", "folder", "thumb"]) delete data[key];
   data.active = false;
   const pack = sanitize(packName || data.name || "Scene");
-  // Bulk transfers group numbered scenes ("001 Ground Floor", "002 Ground Floor") into one folder.
-  const segments = destination("maps", author, group ? sanitize(mapGroupName(pack)) : pack, pack);
+  // Bulk transfers put variants of one map ("Zen Monastery - 03a Autumn Day"…) into one `folder`.
+  const segments = destination("maps", author, folder ? sanitize(folder) : pack, pack);
 
   const paths = [...collectPaths(data)].filter(p => !isExternal(p) && !CORE_PREFIXES.some(c => p.startsWith(c)));
   const main = backgroundPaths(data)[0];

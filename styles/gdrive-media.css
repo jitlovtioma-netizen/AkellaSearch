@@ -62,3 +62,14 @@ button.gdms-open { flex: 0 0 100%; margin-top: 4px; }
 .gdms-dialog .gdms-checklist { max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--color-border, rgba(127, 127, 127, 0.4)); border-radius: 4px; padding: 4px 6px; }
 .gdms-dialog .gdms-check { display: flex; align-items: center; gap: 6px; }
 .gdms-dialog .gdms-toggle-all { cursor: pointer; }
+
+/* Maps that come with a scene (walls, lights, sounds): highlighted and labelled. */
+.gdms .gdms-card.gdms-ready { border-color: #e8a33d; box-shadow: 0 0 0 1px #e8a33d inset; }
+.gdms .gdms-card.gdms-ready:hover { border-color: #ffc46b; }
+.gdms .gdms-ribbon {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+  color: #ffc46b; font-size: 0.75em; font-weight: bold;
+  padding: 10px 6px 3px; text-align: left; pointer-events: none;
+}
+.gdms .gdms-scene .gdms-thumb img + .gdms-kind-icon { display: none; }

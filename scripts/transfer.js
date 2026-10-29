@@ -7,7 +7,7 @@ import { DialogV2, FilePickerClass, esc, localize, mapLimit, notify, notifyProgr
 import { getSetting, setSetting, uploadConcurrency } from "./settings.js";
 import * as drive from "./drive.js";
 import { classify } from "./media-index.js";
-import { UploadSession, authorDatalist, destination, guessCategory } from "./uploader.js";
+import { UploadSession, authorDatalist, destination, existingMapFolders, groupNames, guessCategory } from "./uploader.js";
 import { exportSceneData } from "./scene-packs.js";
 
 const WORLD = "__world";
@@ -39,7 +39,7 @@ async function listScenes(sourceId) {
       const adventures = await pack.getDocuments();
       for (const adv of adventures) {
         const scenes = adv.toObject().scenes ?? [];
-        for (const s of scenes) items.push({ key: `${adv.uuid}.${s._id}`, name: `${s.name} (${adv.name})`, load: async () => s });
+        for (const s of scenes) items.push({ key: `${adv.uuid}.${s._id}`, name: `${s.name} (${adv.name})`, pack: s.name, load: async () => s });
       }
     }
   }
@@ -132,6 +132,16 @@ export async function openTransfer() {
   if (step1.author) await setSetting("lastAuthor", step1.author);
 
   const session = new UploadSession({ convert: step1.convert, skipExisting: step1.skip });
+  const packName = item => item.pack ?? item.name;
+  const looseFiles = step1.loose && mod
+    ? (await browseAll(`modules/${mod.id}`)).filter(p => ["image", "video", "audio"].includes(classify({ name: p })))
+    : [];
+  const fileName = path => decodeURIComponent(path.split("/").pop());
+  // One folder per map for all its variants, across scenes and loose files.
+  const groups = groupNames([
+    ...step2.map(packName),
+    ...looseFiles.filter(p => classify({ name: p }) !== "audio").map(fileName)
+  ], existingMapFolders(author));
   const progress = notifyProgress(localize("Transfer.Running"));
   let exported = 0;
   let scenesDone = 0;
@@ -140,7 +150,7 @@ export async function openTransfer() {
     // Scenes go two at a time; each scene uploads its own files in parallel too.
     await mapLimit(step2, 2, async item => {
       try {
-        await exportSceneData(await item.load(), { author, packName: item.name.replace(/\s*\([^)]*\)$/, ""), session, group: true });
+        await exportSceneData(await item.load(), { author, packName: packName(item), session, folder: groups.get(packName(item)) });
         exported++;
       } catch (err) {
         if (err.code === "auth") throw err;
@@ -150,8 +160,8 @@ export async function openTransfer() {
       progress.update(`${localize("Transfer.Scene")} ${session.progressText(++scenesDone, step2.length)}`);
     });
     let loose = 0;
-    if (step1.loose && mod) {
-      const files = (await browseAll(`modules/${mod.id}`)).filter(p => ["image", "video", "audio"].includes(classify({ name: p })));
+    if (looseFiles.length) {
+      const files = looseFiles;
       let filesDone = 0;
       await mapLimit(files, uploadConcurrency(), async path => {
         try {
@@ -160,10 +170,10 @@ export async function openTransfer() {
           if (!response?.ok) response = await fetch(path).catch(() => null);
           if (!response?.ok) return;
           const blob = await response.blob();
-          const name = decodeURIComponent(path.split("/").pop());
+          const name = fileName(path);
           const category = await guessCategory(blob, name, path);
           // Maps are grouped by name (numbers and variants stripped), the rest goes under the module title.
-          const segments = destination(category, author, category === "maps" ? "" : mod.title, name);
+          const segments = destination(category, author, category === "maps" ? groups.get(name) : mod.title, name);
           await session.put(blob, name, segments, { sourceKey: path });
           loose++;
         } catch (err) {

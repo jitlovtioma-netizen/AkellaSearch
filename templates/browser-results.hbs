@@ -11,11 +11,11 @@
   </div>
   <div class="gdms-results">
     {{#each items}}
-    <div class="gdms-card gdms-{{kind}}" data-id="{{id}}" draggable="true" data-tooltip="{{path}}/{{name}}">
+    <div class="gdms-card gdms-{{kind}} {{#if ready}}gdms-ready{{/if}}" data-id="{{id}}" draggable="true" data-tooltip="{{path}}/{{name}}">
       <div class="gdms-thumb" {{#if isVisual}}data-action="preview"{{/if}}{{#if isAudio}}data-action="play"{{/if}}{{#if isScene}}data-action="importPack"{{/if}}>
         {{#if thumb}}<img src="{{thumb}}" loading="lazy" alt="" onerror="this.remove()">{{/if}}
         <i class="fa-solid {{icon}} gdms-kind-icon"></i>
-        {{#if hasPack}}<span class="gdms-badge" data-tooltip="{{localize 'GDMS.HasPack'}}"><i class="fa-solid fa-dungeon"></i></span>{{/if}}
+        {{#if ready}}<span class="gdms-ribbon" data-tooltip="{{localize 'GDMS.HasPack'}}"><i class="fa-solid fa-dungeon"></i> {{localize "GDMS.ReadyScene"}}</span>{{/if}}
         {{#if cached}}<span class="gdms-badge gdms-badge-left" data-tooltip="{{localize 'GDMS.Cached'}}"><i class="fa-solid fa-hard-drive"></i></span>{{/if}}
       </div>
       <div class="gdms-name">{{name}}</div>

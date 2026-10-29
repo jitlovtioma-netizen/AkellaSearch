@@ -30,7 +30,7 @@
     "SignOut": "Sign out of Google",
     "EmptyIndex": "No index yet. Set the API key in the module settings and click “Refresh index”.",
     "Found": "Found",
-    "HasPack": "A scene pack (walls, lights, sounds) sits next to this map",
+    "HasPack": "Ready scene: walls, doors, lights and sounds. Click to import it whole",
     "Cached": "Already copied to the Foundry server",
     "LoadMore": "Show more",
     "Cancel": "Cancel",
@@ -46,7 +46,8 @@
       "video": "Video",
       "audio": "Audio",
       "scene": "Scenes",
-      "other": "Other"
+      "other": "Other",
+      "ready": "Ready scenes (walls, lights)"
     },
     "Action": {
       "Tile": "Place as a tile at screen centre (or drag onto the canvas)",
@@ -262,6 +263,7 @@
       "Running": "Merging folders…",
       "Nothing": "Nothing to merge: folders are already grouped.",
       "Done": "Done: merged {folders} folders, moved {files} files. Empty folders went to the Drive trash."
-    }
+    },
+    "ReadyScene": "Ready scene"
   }
 }

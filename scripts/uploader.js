@@ -13,6 +13,9 @@ import * as drive from "./drive.js";
 import { sanitize } from "./cache.js";
 import { conversionTarget, convertedName, maybeConvert } from "./convert.js";
 import { basename, classify, extension, mediaIndex } from "./media-index.js";
+import { groupNames, mapGroupName } from "./grouping.js";
+
+export { groupNames, mapGroupName };
 
 export const CATEGORIES = {
   maps: "Maps",
@@ -70,24 +73,9 @@ export function guessAuthor(name) {
   return "";
 }
 
-// Words that mark a variant of the same map ("Tavern Night Gridless" belongs with "Tavern").
-const VARIANT_WORDS = "day|night|dawn|dusk|evening|morning|grid|gridded|gridless|no ?grid|nogrid|hd|4k|8k|uhd|original|alt|alternate|variant|ver|v|copy|final|light|dark|lit|unlit|день|ночь|сетка|без сетки";
-const VARIANT_TAIL = new RegExp(`[\\s\\-.,]+(?:\\(\\d+\\)|\\[\\d+\\]|(?:${VARIANT_WORDS})\\s*\\d*|\\d+(?:x\\d+)?)$`, "i");
-const NUMBER_HEAD = /^\s*(?:\d+[\s_.\-)]+|#\d+\s*|[[(][^\])]{2,40}[\])]\s*)/;
-
-/**
- * Folder name for a map: the file name without its numbering and variant markers, so
- * "001 Ground Floor", "002 Ground Floor" and "Ground Floor Night" all land in "Ground Floor".
- */
-export function mapGroupName(name) {
-  let stem = ` ${basename(name).replace(/_/g, " ").trim()}`; // leading space lets the tail rule see the first word
-  for (let i = 0; i < 6; i++) {
-    const next = stem.replace(NUMBER_HEAD, "").replace(VARIANT_TAIL, "").trim();
-    if (!next || next === stem) break;
-    stem = next;
-  }
-  stem = stem.replace(/\s{2,}/g, " ").replace(/[\s\-.,]+$/, "").trim();
-  return stem || basename(name);
+/** Map folders already on Drive for an author (used to join new maps to existing folders). */
+export function existingMapFolders(author) {
+  return mediaIndex.childFolders(`${CATEGORIES.maps}/${sanitize(author || UNKNOWN_AUTHOR)}`);
 }
 
 /** Folder segments for a file. */
@@ -393,6 +381,9 @@ export async function uploadWithDialog(files, currentFolder = "") {
   const media = files.filter(f => !isScene(f));
   const scenes = files.filter(isScene);
   const packDirs = new Set(scenes.map(f => relativeDir(f).join("/")));
+  // Variants of one map ("Zen Monastery - 03a Autumn Day", "Zen Garden Monastery (Winter)") share a folder.
+  const visual = files.filter(f => ["image", "video", "scene"].includes(classify({ name: f.name })));
+  const groups = groupNames(visual.map(f => f.name), existingMapFolders(choice.author));
   // Where a file goes. Files from a dropped folder keep their subfolders ("Czepeku/Tavern/x.webp").
   const segmentsFor = async file => {
     const rel = relativeDir(file);
@@ -403,7 +394,7 @@ export async function uploadWithDialog(files, currentFolder = "") {
     // The dropped folder itself is the collection; only its subfolders become map folders.
     const inner = rel.slice(1);
     const sub = category === "maps" ? inner.join(" - ") : rel.join(" - ");
-    const pack = category === "maps" ? (packName || sub) : (choice.pack || sub);
+    const pack = category === "maps" ? (packName || sub || groups.get(file.name)) : (choice.pack || sub);
     return destination(category, choice.author, pack, file.name);
   };
   let done = 0;
@@ -546,8 +537,10 @@ export async function regroupFolders(folder = "") {
     : [folder];
   const plan = [];
   for (const parent of parents) {
-    for (const name of mediaIndex.childFolders(parent)) {
-      const group = sanitize(mapGroupName(name));
+    const names = mediaIndex.childFolders(parent);
+    const groups = groupNames(names);
+    for (const name of names) {
+      const group = sanitize(groups.get(name) ?? name);
       if (group && group !== name) plan.push({ parent, from: `${parent}/${name}`, group });
     }
   }
