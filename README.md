@@ -16,7 +16,7 @@
 В Foundry откройте **Add-on Modules → Install Module** и вставьте ссылку на manifest:
 
 ```
-https://github.com/jitlovtioma-netizen/AkellaSearch/releases/latest/download/module.json
+https://raw.githubusercontent.com/jitlovtioma-netizen/AkellaSearch/main/module.json
 ```
 
 Можно поставить и вручную: распакуйте `akella-search.zip` в `Data/modules/akella-search/`.
@@ -109,4 +109,8 @@ await api.exportSceneToDrive(canvas.scene);     // выгрузить сцену
 
 ## Выпуск новой версии
 
-Создайте на GitHub релиз с тегом вида `v1.0.1`. GitHub Actions сам соберёт `akella-search.zip` и `module.json` и прикрепит их к релизу, после чего Foundry увидит обновление.
+1. Поменяйте `version` в `module.json` (например, `1.0.1`).
+2. Запустите `./build.sh`, он пересоберёт `dist/akella-search.zip`.
+3. Закоммитьте и запушьте в `main`. Foundry увидит обновление по ссылке на manifest.
+
+Можно публиковать и через релизы GitHub с тегом вида `v1.0.1`: GitHub Actions сам соберёт архив и прикрепит его к релизу.
