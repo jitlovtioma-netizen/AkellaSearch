@@ -1,0 +1,14 @@
+{
+  "name": "akella-export",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Finds Foundry VTT map modules, converts them to webp/ogg scene packs and puts them into a Google Drive folder for Akella Search.",
+  "type": "module",
+  "bin": { "akella-export": "index.mjs" },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "classic-level": "^1.4.1",
+    "ffmpeg-static": "^5.2.0",
+    "sharp": "^0.33.5"
+  }
+}

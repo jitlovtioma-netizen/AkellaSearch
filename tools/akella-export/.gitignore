@@ -1,0 +1,4 @@
+node_modules/
+akella-export.config.json
+akella-export.state.json*
+akella-export.log
