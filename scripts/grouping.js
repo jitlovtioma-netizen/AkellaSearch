@@ -6,8 +6,7 @@
  *   "Pirate Tavern Day Rain 2F", "Ground Floor Night"
  *
  * mapGroupName() strips numbering, variant codes and variant words from one name.
- * groupNames() looks at a whole batch and also merges related names
- * ("Secret Fey Fountain Cave" → "Secret Fey Fountain", "Zen Garden Monastery" → "Zen Monastery").
+ * groupNames() looks at a whole batch and joins names that differ only in spacing or case.
  */
 
 // Words that only describe a variant of a map: time of day, weather, season, lighting,
@@ -81,20 +80,10 @@ export function mapGroupName(name) {
 const words = s => s.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase().split(/\s+/).filter(Boolean);
 const flat = s => words(s).join("");
 
-/** True when every word of `short` appears in `long`, in order, starting with the same word. */
-function contains(short, long) {
-  const a = words(short);
-  const b = words(long);
-  if (a.length < 2 && a[0]?.length < 5) return false; // "The", "Inn" are too vague to merge on
-  if (a.length >= b.length || a[0] !== b[0]) return false;
-  let i = 0;
-  for (const w of b) if (w === a[i]) i++;
-  return i === a.length;
-}
-
 /**
- * Folder names for a batch of map names. Related names are merged into the shortest one:
- * "Secret Fey Fountain Cave" joins "Secret Fey Fountain", "Zen Garden Monastery" joins "Zen Monastery".
+ * Folder names for a batch of map names. Names that differ only in spacing or case share a
+ * folder ("01LiarBar" and "Liar Bar - 02 Night" → "LiarBar"); "Zen Monastery" and
+ * "Zen Garden Monastery" stay apart, they are different maps.
  * @param {string[]} names     File or scene names in the batch
  * @param {string[]} existing  Map folders already on Drive under the same author
  * @returns {Map<string, string>} name → folder
@@ -106,7 +95,8 @@ export function groupNames(names, existing = []) {
   const canonical = new Map();
   const roots = [];
   for (const g of pool) {
-    const root = roots.find(r => flat(r) === flat(g) || contains(r, g));
+    // Only spelling differences merge ("LiarBar" = "Liar Bar"); different names are different maps.
+    const root = roots.find(r => flat(r) === flat(g));
     if (root) canonical.set(g, root);
     else {
       roots.push(g);
