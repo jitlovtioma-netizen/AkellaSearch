@@ -80,7 +80,11 @@ function parseArgs(argv) {
   return args;
 }
 
+// Quartz's Foundry keeps its data here; the standard locations are tried after it.
+const KNOWN_DATA_DIRS = ["D:/FoundryVTT_DataV13/Data"];
+
 function defaultDataDir() {
+  for (const dir of KNOWN_DATA_DIRS) if (fs.existsSync(path.join(dir, "modules"))) return path.resolve(dir);
   if (process.platform === "win32") return path.join(process.env.LOCALAPPDATA ?? path.join(os.homedir(), "AppData", "Local"), "FoundryVTT", "Data");
   if (process.platform === "darwin") return path.join(os.homedir(), "Library", "Application Support", "FoundryVTT", "Data");
   return path.join(os.homedir(), ".local", "share", "FoundryVTT", "Data");
