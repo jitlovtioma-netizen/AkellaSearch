@@ -6,7 +6,20 @@
     "AllFolders": "All folders",
     "Refresh": "Refresh index",
     "RefreshHint": "Scan the Google Drive folder again",
-    "Upload": "Upload",
+    "Upload": {
+      "Title": "Upload to Google Drive",
+      "Button": "Upload",
+      "Files": "{count} files",
+      "Auto": "Detect automatically",
+      "Category": "Section",
+      "Author": "Author",
+      "Pack": "Map / set folder",
+      "PackPlaceholder": "from the file name",
+      "PackHint": "The upload contains a scene JSON: all files go into one Maps/<author>/<folder>, and JSON references are updated to the new names.",
+      "SortHint": "Maps go to Maps/<author>/<map name>, tokens to Tokens/<author>, music to Music/<author>, and so on.",
+      "ToFolder": "Auto-sorting is off: files go into {folder}.",
+      "Convert": "Convert png/jpg → webp and mp3/wav/flac → ogg"
+    },
     "UploadHint": "Upload files into the selected Drive folder (you can also drop files on this window)",
     "SignIn": "Sign in with Google",
     "SignOut": "Sign out of Google",
@@ -58,7 +71,8 @@
       "MissingMedia": "{count} files were not found. See the console (F12).",
       "Imported": "Imported {count} scenes",
       "Exporting": "Uploading scene {name} to Google Drive…",
-      "Exported": "Scene “{name}” uploaded to Drive, {count} files"
+      "Exported": "Scene “{name}” uploaded to {path}, {count} files",
+      "ConversionFailed": "{count} files could not be converted and were uploaded as they are. See the console (F12)."
     },
     "Errors": {
       "NoClientId": "No OAuth Client ID in the module settings.",
@@ -136,10 +150,6 @@
         "Name": "Cache folder",
         "Hint": "Folder in Foundry storage that Drive files are copied into."
       },
-      "exportFolderName": {
-        "Name": "Scene pack folder",
-        "Hint": "Drive subfolder that scenes are uploaded into."
-      },
       "soundRadius": {
         "Name": "Sound radius",
         "Hint": "Ambient sound radius (scene units) when dropping audio."
@@ -147,7 +157,77 @@
       "playersCanBrowse": {
         "Name": "Players can browse",
         "Hint": "Show the search window to players (placing still needs the matching permissions)."
+      },
+      "autoSort": {
+        "Name": "Auto-sort on Drive",
+        "Hint": "Put uploads into Maps/<author>/<map>, Tokens, Tiles, Music, Ambience, SFX."
+      },
+      "convertImages": {
+        "Name": "Convert images to WebP",
+        "Hint": "png, jpg, bmp, tiff become webp when uploaded to Drive."
+      },
+      "convertAudio": {
+        "Name": "Convert audio to OGG",
+        "Hint": "mp3, wav, flac, m4a become ogg (Opus) when uploaded to Drive."
+      },
+      "webpQuality": {
+        "Name": "WebP quality",
+        "Hint": "85 looks like the original at 3–10× smaller than png."
+      },
+      "audioBitrate": {
+        "Name": "OGG bitrate, kbit/s",
+        "Hint": "128 suits music, 96 ambience."
+      },
+      "convertOnImport": {
+        "Name": "Convert when copying into Foundry",
+        "Hint": "Save png/mp3 files already on Drive to the Foundry server as webp/ogg."
       }
+    },
+    "TransferHint": "Copy the scenes of a map module, or of this world, to Drive",
+    "ConvertDriveHint": "Convert png/jpg and mp3 in the selected Drive folder to webp and ogg",
+    "Category": {
+      "maps": "Maps",
+      "tokens": "Tokens",
+      "tiles": "Tiles",
+      "music": "Music",
+      "ambience": "Ambience",
+      "sfx": "Sound effects",
+      "other": "Other"
+    },
+    "Export": {
+      "Title": "Upload scene to Google Drive",
+      "Button": "Upload",
+      "Hint": "The scene and all its files go into Maps/<author>/<folder>. The background is named after the folder, so the map shows a scene-pack badge."
+    },
+    "ConvertDrive": {
+      "Title": "Convert files on Drive",
+      "Button": "Convert",
+      "Nothing": "Nothing to convert in this folder.",
+      "Body": "{count} files to convert in {folder}. .webp and .ogg versions will be created next to them.",
+      "Trash": "Move the originals to the Google Drive trash (recoverable for 30 days)",
+      "Hint": "Scene packs keep working: on import map.png is found as map.webp.",
+      "Running": "Converting files on Drive…",
+      "Done": "{count} files converted"
+    },
+    "TransferButton": "Transfer",
+    "Transfer": {
+      "Title": "Transfer maps to Google Drive",
+      "World": "Scenes of this world",
+      "Packs": "compendiums",
+      "Intro": "Pick an installed, enabled map module (or this world). Each scene is uploaded as a scene pack into Maps/<author>/<scene> with walls, lights, sounds and all files.",
+      "Source": "Source",
+      "AuthorPlaceholder": "module author",
+      "Loose": "Also copy the module's loose files (maps, tokens, music without scenes)",
+      "Next": "Next",
+      "Choose": "{count} scenes. Author on Drive: {author}. Tick the ones to transfer:",
+      "ToggleAll": "Select all / none",
+      "Start": "Transfer",
+      "Running": "Transferring to Drive…",
+      "Scene": "Scene",
+      "Files": "File",
+      "NoScenes": "This source has no scenes.",
+      "Done": "{scenes} scenes transferred, {files} files uploaded ({loose} loose)",
+      "Failed": "{count} scenes failed ({names}). See the console (F12)."
     }
   }
 }

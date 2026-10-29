@@ -17,7 +17,9 @@
     </button>
     {{#if canSignIn}}
       {{#if signedIn}}
-      <button type="button" data-action="upload" data-tooltip="{{localize 'GDMS.UploadHint'}}"><i class="fa-solid fa-cloud-arrow-up"></i> {{localize "GDMS.Upload"}}</button>
+      <button type="button" data-action="upload" data-tooltip="{{localize 'GDMS.UploadHint'}}"><i class="fa-solid fa-cloud-arrow-up"></i> {{localize "GDMS.Upload.Button"}}</button>
+      <button type="button" data-action="transfer" data-tooltip="{{localize 'GDMS.TransferHint'}}"><i class="fa-solid fa-truck-ramp-box"></i> {{localize "GDMS.TransferButton"}}</button>
+      <button type="button" data-action="convertDrive" data-tooltip="{{localize 'GDMS.ConvertDriveHint'}}"><i class="fa-solid fa-file-export"></i></button>
       <button type="button" data-action="signOut" data-tooltip="{{localize 'GDMS.SignOut'}}"><i class="fa-solid fa-right-from-bracket"></i></button>
       {{else}}
       <button type="button" data-action="signIn"><i class="fa-brands fa-google"></i> {{localize "GDMS.SignIn"}}</button>

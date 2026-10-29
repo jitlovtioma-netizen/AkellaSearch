@@ -6,11 +6,13 @@
  * Also supported: Universal VTT files (.dd2vtt / .uvtt from Dungeondraft, DungeonFog, etc.)
  * and plain images (a new scene with that image as background).
  */
-import { MODULE_ID, DialogV2, esc, hasNativeLevels, loadTex, localize, mapLimit, notify } from "./compat.js";
-import { getSetting } from "./settings.js";
+import { MODULE_ID, DialogV2, esc, hasNativeLevels, loadTex, localize, mapLimit, notify, notifyProgress } from "./compat.js";
+export { notifyProgress };
+import { getSetting, setSetting } from "./settings.js";
+import { UploadSession, authorDatalist, destination } from "./uploader.js";
 import * as drive from "./drive.js";
 import { cacheRoot, ensureLocal, localFileExists, sanitize, storeBlob } from "./cache.js";
-import { basename, extension, mediaIndex } from "./media-index.js";
+import { basename, classify, extension, mediaIndex } from "./media-index.js";
 import { convertLegacyLevels, hasLegacyLevels } from "./levels-converter.js";
 
 const MEDIA_RE = /\.(png|jpe?g|webp|gif|svg|avif|bmp|tiff?|webm|mp4|m4v|ogv|mov|mp3|ogg|oga|opus|wav|flac|m4a|aac)(\?.*)?$/i;
@@ -67,7 +69,13 @@ async function localizeMedia(data, packPath, onProgress) {
   const paths = [...collectPaths(data)];
   const local = mediaIndex.subtree(packPath);
   const byName = new Map();
-  for (const e of [...mediaIndex.subtree(""), ...local]) byName.set(e.name.toLowerCase(), e); // pack folder wins
+  const byStem = new Map();
+  for (const e of [...mediaIndex.subtree(""), ...local]) { // pack folder wins
+    byName.set(e.name.toLowerCase(), e);
+    byStem.set(`${e.kind}:${basename(e.name).toLowerCase()}`, e);
+  }
+  // Files may have been converted after the JSON was written (map.png → map.webp).
+  const find = name => byName.get(name.toLowerCase()) ?? byStem.get(`${classify({ name })}:${basename(name).toLowerCase()}`);
   const map = new Map();
   const missing = [];
   let done = 0;
@@ -75,7 +83,7 @@ async function localizeMedia(data, packPath, onProgress) {
     if (!isExternal(path) && await localFileExists(path)) {
       map.set(path, path);
     } else {
-      const entry = byName.get(fileName(path).toLowerCase());
+      const entry = find(fileName(path));
       if (entry) map.set(path, await ensureLocal(entry));
       else if (!isExternal(path)) missing.push(path);
     }
@@ -386,7 +394,54 @@ export async function createSceneFromMedia(entry) {
 /*  Export to Drive                             */
 /* -------------------------------------------- */
 
-/** Upload a scene and every local file it uses into "<root>/<Scene Packs>/<scene name>/". */
+/** Paths of the scene backgrounds (V13 `background`, V14 level backgrounds), initial level first. */
+function backgroundPaths(data) {
+  const levels = packLevels(data);
+  if (!levels.length) return data.background?.src ? [data.background.src] : [];
+  const sorted = [...levels].sort((a, b) => (a._id === data.initialLevel ? -1 : b._id === data.initialLevel ? 1 : 0));
+  return sorted.map(l => l.background?.src).filter(Boolean);
+}
+
+/**
+ * Upload scene data and every non-core file it uses into Maps/<author>/<pack>/ on Drive.
+ * The main background is renamed after the pack, so the map shows up with a scene-pack badge.
+ * @param {object} data                 Scene data (toObject()).
+ * @param {object} options
+ * @param {string} options.author
+ * @param {string} [options.packName]   Defaults to the scene name.
+ * @param {UploadSession} options.session
+ * @param {Function} [options.onProgress]
+ */
+export async function exportSceneData(data, { author, packName, session, onProgress } = {}) {
+  data = foundry.utils.deepClone(data);
+  for (const key of ["_id", "_stats", "ownership", "folder", "thumb"]) delete data[key];
+  data.active = false;
+  const pack = sanitize(packName || data.name || "Scene");
+  const segments = destination("maps", author, pack, pack);
+
+  const paths = [...collectPaths(data)].filter(p => !isExternal(p) && !CORE_PREFIXES.some(c => p.startsWith(c)));
+  const main = backgroundPaths(data)[0];
+  const map = new Map();
+  let done = 0;
+  await mapLimit(paths, 2, async path => {
+    let response = await fetch(encodeURI(path)).catch(() => null);
+    if (!response?.ok) response = await fetch(path).catch(() => null);
+    if (!response?.ok) return;
+    const blob = await response.blob();
+    const name = path === main ? `${pack}.${extension(fileName(path))}` : fileName(path);
+    const result = await session.put(blob, name, segments, { sourceKey: path });
+    map.set(path, result.name);
+    onProgress?.(++done, paths.length);
+  });
+
+  const json = replacePaths(data, map);
+  json.flags = foundry.utils.mergeObject(json.flags ?? {}, { [MODULE_ID]: { exportedFrom: game.release?.version ?? game.version, author } });
+  const blob = new Blob([JSON.stringify(json, null, 2)], { type: "application/json" });
+  await session.put(blob, `${pack}.json`, segments, { convert: false });
+  return { files: map.size + 1, path: segments.join("/") };
+}
+
+/** Ask for the author and upload one scene as a scene pack. */
 export async function exportSceneToDrive(scene) {
   if (!drive.isSignedIn()) {
     try {
@@ -395,72 +450,38 @@ export async function exportSceneToDrive(scene) {
       return ui.notifications.error(err.message);
     }
   }
+  const saved = scene.getFlag(MODULE_ID, "author") || getSetting("lastAuthor") || "";
+  const choice = await DialogV2().wait({
+    window: { title: localize("Export.Title"), icon: "fa-brands fa-google-drive" },
+    content: `<form class="gdms-dialog">
+      <div class="form-group"><label>${localize("Upload.Author")}</label><input type="text" name="author" value="${esc(saved)}" list="gdms-export-authors"></div>
+      <div class="form-group"><label>${localize("Upload.Pack")}</label><input type="text" name="pack" value="${esc(scene.name)}"></div>
+      <div class="form-group"><label><input type="checkbox" name="convert" ${getSetting("convertImages") || getSetting("convertAudio") ? "checked" : ""}> ${localize("Upload.Convert")}</label></div>
+      <p class="hint">${localize("Export.Hint")}</p>
+      ${authorDatalist("gdms-export-authors")}
+    </form>`,
+    buttons: [{
+      action: "ok", label: localize("Export.Button"), icon: "fa-solid fa-cloud-arrow-up", default: true,
+      callback: (ev, b) => ({ author: b.form.elements.author.value.trim(), pack: b.form.elements.pack.value.trim(), convert: b.form.elements.convert.checked })
+    }, { action: "cancel", label: localize("Cancel") }],
+    rejectClose: false
+  });
+  if (!choice || choice === "cancel") return;
+  if (choice.author) await setSetting("lastAuthor", choice.author);
   const progress = notifyProgress(localize("Notify.Exporting", { name: scene.name }));
+  const session = new UploadSession({ convert: choice.convert });
   try {
-    const data = scene.toObject();
-    delete data._stats;
-    delete data.ownership;
-    delete data.folder;
-    data.active = false;
-
-    const root = drive.rootFolderId();
-    const exportName = getSetting("exportFolderName") || "Scene Packs";
-    const packsFolder = await drive.ensureFolder(exportName, root);
-    const packFolder = await drive.ensureFolder(sanitize(scene.name), packsFolder.id);
-
-    const paths = [...collectPaths(data)].filter(p => !isExternal(p) && !CORE_PREFIXES.some(c => p.startsWith(c)));
-    const map = new Map();
-    const usedNames = new Map();
-    const uploaded = [];
-    let duplicates = 0;
-    await mapLimit(paths, 3, async path => {
-      let response = await fetch(encodeURI(path)).catch(() => null);
-      if (!response?.ok) response = await fetch(path).catch(() => null);
-      if (!response?.ok) return;
-      const blob = await response.blob();
-      let name = sanitize(fileName(path));
-      // Two different files with the same name: keep both.
-      if (usedNames.has(name.toLowerCase())) name = `${basename(name)}-${++duplicates}.${extension(name)}`;
-      usedNames.set(name.toLowerCase(), path);
-      uploaded.push(await drive.uploadFile(blob, name, packFolder.id));
-      map.set(path, name);
-      progress.update(`${map.size}/${paths.length}`);
+    const result = await exportSceneData(scene.toObject(), {
+      author: choice.author, packName: choice.pack || scene.name, session,
+      onProgress: (n, total) => progress.update(`${n}/${total}`)
     });
-
-    const json = replacePaths(data, map);
-    json.flags = foundry.utils.mergeObject(json.flags ?? {}, { [MODULE_ID]: { exportedFrom: game.release?.version ?? game.version } });
-    const jsonBlob = new Blob([JSON.stringify(json, null, 2)], { type: "application/json" });
-    uploaded.push(await drive.uploadFile(jsonBlob, `${sanitize(scene.name)}.json`, packFolder.id));
-
-    const packsPath = exportName;
-    const packPath = `${exportName}/${sanitize(scene.name)}`;
-    await mediaIndex.addFolder(packsFolder, "");
-    await mediaIndex.addFolder(packFolder, packsPath);
-    await mediaIndex.addEntries(uploaded, packPath, packFolder.id);
-    notify("info", "Notify.Exported", { name: scene.name, count: uploaded.length });
+    await session.finish();
+    notify("info", "Notify.Exported", { name: scene.name, count: result.files, path: result.path });
   } catch (err) {
     console.error(err);
     ui.notifications.error(err.message);
+    await session.finish();
   } finally {
     progress.close();
   }
-}
-
-/* -------------------------------------------- */
-
-/** A persistent notification that can be updated and closed. */
-export function notifyProgress(message) {
-  const n = ui.notifications.info(message, { permanent: true });
-  return {
-    update(suffix) {
-      try {
-        if (typeof n?.update === "function") n.update({ message: `${message} ${suffix}` });
-      } catch (err) { /* ignore */ }
-    },
-    close() {
-      try {
-        ui.notifications.remove(n?.id ?? n);
-      } catch (err) { /* ignore */ }
-    }
-  };
 }

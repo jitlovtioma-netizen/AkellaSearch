@@ -25,7 +25,7 @@ jobs:
              '.version = $v | .manifest = $m | .download = $d' module.json > module.tmp && mv module.tmp module.json
 
       - name: Build zip
-        run: zip -r akella-search.zip module.json README.md scripts templates styles lang
+        run: zip -r akella-search.zip module.json README.md scripts templates styles lang vendor
 
       - name: Upload assets
         env:

@@ -6,6 +6,9 @@ import { MediaBrowser } from "./browser.js";
 import { onDropCanvasData, placeMedia } from "./placement.js";
 import { createSceneFromMedia, exportSceneToDrive, importPack } from "./scene-packs.js";
 import { convertLegacyLevels, hasLegacyLevels } from "./levels-converter.js";
+import { setEncoderUrl, maybeConvert } from "./convert.js";
+import { convertExisting, uploadWithDialog } from "./uploader.js";
+import { openTransfer } from "./transfer.js";
 
 function canBrowse() {
   return game.user.isGM || getSetting("playersCanBrowse");
@@ -13,6 +16,8 @@ function canBrowse() {
 
 Hooks.once("init", () => {
   registerSettings();
+  const worker = `modules/${MODULE_ID}/vendor/opus/encoderWorker.min.js`;
+  setEncoderUrl(foundry.utils.getRoute?.(worker) ?? worker);
   loadHbs([
     `modules/${MODULE_ID}/templates/browser-header.hbs`,
     `modules/${MODULE_ID}/templates/browser-results.hbs`
@@ -41,6 +46,10 @@ Hooks.once("ready", async () => {
     importPack,
     createSceneFromMedia,
     exportSceneToDrive,
+    openTransfer,
+    uploadFiles: (files, folder) => uploadWithDialog(files, folder),
+    convertDriveFolder: folder => convertExisting(folder),
+    convert: maybeConvert,
     convertLegacyLevels,
     hasLegacyLevels
   };

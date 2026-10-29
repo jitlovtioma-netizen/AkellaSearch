@@ -3,7 +3,8 @@
  * so every client loads them from the Foundry server (no CORS or Google quota issues).
  */
 import { FilePickerClass } from "./compat.js";
-import { getSetting, setSetting } from "./settings.js";
+import { conversionOptions, getSetting, setSetting } from "./settings.js";
+import { maybeConvert } from "./convert.js";
 import * as drive from "./drive.js";
 
 const createdDirs = new Set();
@@ -86,9 +87,15 @@ export function ensureLocal(entry) {
     const known = cachedPath(entry);
     if (known && await exists(known)) return known;
     const blob = await drive.download(entry.id);
-    const typed = blob.type ? blob : new Blob([blob], { type: entry.mimeType });
+    let typed = blob.type ? blob : new Blob([blob], { type: entry.mimeType });
+    let name = entry.name;
+    if (getSetting("convertOnImport")) {
+      const result = await maybeConvert(typed, name, conversionOptions(true));
+      typed = result.blob;
+      name = result.name;
+    }
     const dir = [cacheRoot(), ...String(entry.path ?? "").split("/").filter(Boolean).map(sanitize)].join("/");
-    const path = await storeBlob(typed, dir, entry.name);
+    const path = await storeBlob(typed, dir, name);
     remember(entry.id, { path, modifiedTime: entry.modifiedTime });
     return path;
   })();

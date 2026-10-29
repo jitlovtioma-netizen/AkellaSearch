@@ -133,20 +133,34 @@ class MediaIndex {
     }
   }
 
-  /** Add freshly uploaded files without a full rebuild. */
-  async addEntries(files, path, folderId) {
-    const known = new Set(this.entries.map(e => e.id));
-    const plain = this.entries.map(({ kind, search, ...rest }) => rest);
-    for (const f of files) if (!known.has(f.id)) plain.push({ ...f, path, folderId });
-    this.setEntries(plain);
+  /**
+   * Add freshly uploaded files and folders without a full rebuild.
+   * @param {{file: object, path: string, folderId: string}[]} items
+   */
+  async addMany(items) {
+    if (!items.length) return;
+    const plain = new Map(this.entries.map(({ kind, search, ...rest }) => [rest.id, rest]));
+    for (const { file, path, folderId } of items) plain.set(file.id, { ...plain.get(file.id), ...file, path, folderId });
+    this.setEntries([...plain.values()]);
     await this.save();
     Hooks.callAll(`${MODULE_ID}.indexChanged`);
   }
 
-  /** Make sure a folder path exists in the index (for folders created during upload). */
-  async addFolder(folder, parentPath) {
-    if (this.byId.has(folder.id)) return;
-    await this.addEntries([folder], parentPath, folder.parents?.[0]);
+  addEntries(files, path, folderId) {
+    return this.addMany(files.map(file => ({ file, path, folderId })));
+  }
+
+  async remove(ids) {
+    const drop = new Set(ids);
+    this.setEntries(this.entries.filter(e => !drop.has(e.id)).map(({ kind, search, ...rest }) => rest));
+    await this.save();
+    Hooks.callAll(`${MODULE_ID}.indexChanged`);
+  }
+
+  /** Names of the direct subfolders of a folder path (e.g. the authors under "Maps"). */
+  childFolders(path) {
+    const prefix = path ? `${path}/` : "";
+    return this.folders.filter(f => f.startsWith(prefix) && !f.slice(prefix.length).includes("/")).map(f => f.slice(prefix.length));
   }
 }
 

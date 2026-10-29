@@ -229,6 +229,17 @@ export async function uploadFile(blob, name, parentId, { overwrite = true } = {}
   return response.json();
 }
 
+/** Move a file to the Drive trash (recoverable for 30 days). */
+export async function trashFile(fileId) {
+  return request(`/files/${fileId}`, {
+    method: "PATCH",
+    params: { fields: "id" },
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trashed: true }),
+    requireToken: true
+  });
+}
+
 /** Thumbnail URL that works for files shared by link (and for the signed-in owner). */
 export function thumbnailUrl(fileId, size = 320) {
   return `https://drive.google.com/thumbnail?id=${fileId}&sz=w${size}`;

@@ -1,12 +1,14 @@
 /**
  * The media search window, in the spirit of Moulinette Media Search.
  */
-import { MODULE_ID, DialogV2, ImagePopoutClass, esc, localize, mapLimit, notify } from "./compat.js";
+import { MODULE_ID, DialogV2, ImagePopoutClass, esc, localize, notify } from "./compat.js";
 import { getSetting } from "./settings.js";
 import * as drive from "./drive.js";
-import { cachedPath, ensureLocal, sanitize } from "./cache.js";
+import { cachedPath, ensureLocal } from "./cache.js";
 import { KINDS, mediaIndex } from "./media-index.js";
-import { createSceneFromMedia, importPack, notifyProgress } from "./scene-packs.js";
+import { createSceneFromMedia, importPack } from "./scene-packs.js";
+import { convertExisting, uploadWithDialog } from "./uploader.js";
+import { openTransfer } from "./transfer.js";
 import { DRAG_TYPE, placeMedia, viewCenter } from "./placement.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -34,7 +36,9 @@ export class MediaBrowser extends HandlebarsApplicationMixin(ApplicationV2) {
       createScene: MediaBrowser.#onCreateScene,
       importPack: MediaBrowser.#onImportPack,
       addToPlaylist: MediaBrowser.#onAddToPlaylist,
-      openDrive: MediaBrowser.#onOpenDrive
+      openDrive: MediaBrowser.#onOpenDrive,
+      transfer: MediaBrowser.#onTransfer,
+      convertDrive: MediaBrowser.#onConvertDrive
     }
   };
 
@@ -315,6 +319,14 @@ export class MediaBrowser extends HandlebarsApplicationMixin(ApplicationV2) {
     });
   }
 
+  static async #onTransfer() {
+    await this.#run(() => openTransfer());
+  }
+
+  static async #onConvertDrive() {
+    await this.#run(() => convertExisting(this.state.folder));
+  }
+
   static #onOpenDrive(event, target) {
     const entry = this.#entry(target);
     if (entry) window.open(entry.webViewLink ?? `https://drive.google.com/file/d/${entry.id}/view`, "_blank", "noopener");
@@ -323,22 +335,7 @@ export class MediaBrowser extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
 
   async #uploadFiles(files) {
-    if (!files.length) return;
-    if (!drive.isSignedIn()) return notify("warn", "Errors.SignInRequired");
-    const path = this.state.folder;
-    const folderId = mediaIndex.folderIds?.get(path) ?? drive.rootFolderId();
-    const progress = notifyProgress(localize("Notify.Uploading", { count: files.length, folder: path || "/" }));
-    let done = 0;
-    await this.#run(async () => {
-      const uploaded = await mapLimit(files, 3, async file => {
-        const result = await drive.uploadFile(file, sanitize(file.name), folderId, { overwrite: false });
-        progress.update(`${++done}/${files.length}`);
-        return { ...result, modifiedTime: result.modifiedTime ?? new Date().toISOString() };
-      });
-      await mediaIndex.addEntries(uploaded, path, folderId);
-      notify("info", "Notify.Uploaded", { count: uploaded.length });
-    });
-    progress.close();
+    await this.#run(() => uploadWithDialog(files, this.state.folder));
     this.render();
   }
 }

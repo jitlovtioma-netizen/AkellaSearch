@@ -75,3 +75,20 @@ export async function mapLimit(items, limit, fn) {
   await Promise.all(workers);
   return results;
 }
+
+/** A persistent notification that can be updated and closed. */
+export function notifyProgress(message) {
+  const n = ui.notifications.info(message, { permanent: true });
+  return {
+    update(suffix) {
+      try {
+        if (typeof n?.update === "function") n.update({ message: `${message} ${suffix}` });
+      } catch (err) { /* ignore */ }
+    },
+    close() {
+      try {
+        ui.notifications.remove(n?.id ?? n);
+      } catch (err) { /* ignore */ }
+    }
+  };
+}

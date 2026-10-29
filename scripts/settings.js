@@ -28,7 +28,12 @@ export function registerSettings() {
     choices: { data: "User Data", forgevtt: "The Forge", s3: "Amazon S3" }
   });
   world("cacheFolder", String, "gdrive-media");
-  world("exportFolderName", String, "Scene Packs");
+  world("autoSort", Boolean, true);
+  world("convertImages", Boolean, true);
+  world("convertAudio", Boolean, true);
+  world("webpQuality", Number, 85, { range: { min: 50, max: 100, step: 5 } });
+  world("audioBitrate", Number, 128, { range: { min: 64, max: 256, step: 32 } });
+  world("convertOnImport", Boolean, false);
   world("soundRadius", Number, 30);
   world("playersCanBrowse", Boolean, false, { requiresReload: true });
 
@@ -37,4 +42,15 @@ export function registerSettings() {
   hidden("indexPath", String, "");
   hidden("indexBuiltAt", Number, 0);
   hidden("cacheMap", Object, {});
+  game.settings.register(MODULE_ID, "lastAuthor", { scope: "client", config: false, type: String, default: "" });
+}
+
+/** Conversion options from the settings, for convert.js. */
+export function conversionOptions(enabled = true) {
+  return {
+    images: enabled && getSetting("convertImages"),
+    audio: enabled && getSetting("convertAudio"),
+    quality: (getSetting("webpQuality") || 85) / 100,
+    bitRate: (getSetting("audioBitrate") || 128) * 1000
+  };
 }
