@@ -33,8 +33,6 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", async () => {
-  drive.restoreToken();
-  if (game.user.isGM) drive.preload();
   await mediaIndex.load();
   game.modules.get(MODULE_ID).api = {
     open: () => MediaBrowser.open(),
@@ -59,7 +57,7 @@ Hooks.on(`${MODULE_ID}.indexChanged`, () => MediaBrowser.refresh());
 Hooks.on(`${MODULE_ID}.authChanged`, () => MediaBrowser.refresh());
 Hooks.on("updateSetting", setting => {
   if (setting.key === `${MODULE_ID}.indexBuiltAt` && !game.user.isGM) mediaIndex.load();
-  if (setting.key === `${MODULE_ID}.oauthClientId` && game.user.isGM) drive.preload();
+  if (setting.key === `${MODULE_ID}.oauthClientId`) MediaBrowser.refresh();
 });
 
 Hooks.on("dropCanvasData", onDropCanvasData);

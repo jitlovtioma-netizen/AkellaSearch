@@ -24,6 +24,9 @@ export function registerSettings() {
   world("rootFolder", String, DEFAULT_FOLDER);
   world("apiKey", String, "");
   world("oauthClientId", String, "");
+  // Kept per browser: players can read world settings.
+  world("oauthClientSecret", String, "", { scope: "client" });
+  world("uploadConcurrency", Number, 6, { range: { min: 1, max: 10, step: 1 } });
   world("storageSource", String, "data", {
     choices: { data: "User Data", forgevtt: "The Forge", s3: "Amazon S3" }
   });
@@ -42,6 +45,7 @@ export function registerSettings() {
   hidden("indexPath", String, "");
   hidden("indexBuiltAt", Number, 0);
   hidden("cacheMap", Object, {});
+  game.settings.register(MODULE_ID, "refreshToken", { scope: "client", config: false, type: String, default: "" });
   game.settings.register(MODULE_ID, "lastAuthor", { scope: "client", config: false, type: String, default: "" });
 }
 
@@ -53,4 +57,9 @@ export function conversionOptions(enabled = true) {
     quality: (getSetting("webpQuality") || 85) / 100,
     bitRate: (getSetting("audioBitrate") || 128) * 1000
   };
+}
+
+/** How many files to send to Drive at the same time. */
+export function uploadConcurrency() {
+  return Math.min(10, Math.max(1, Number(getSetting("uploadConcurrency")) || 6));
 }

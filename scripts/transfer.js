@@ -3,8 +3,8 @@
  * compendiums), or of the current world, into Maps/<Author>/<Scene>/ as scene packs.
  * Optionally also copies the module's loose media files (maps, tokens, music without scenes).
  */
-import { DialogV2, FilePickerClass, esc, localize, notify, notifyProgress } from "./compat.js";
-import { getSetting, setSetting } from "./settings.js";
+import { DialogV2, FilePickerClass, esc, localize, mapLimit, notify, notifyProgress } from "./compat.js";
+import { getSetting, setSetting, uploadConcurrency } from "./settings.js";
 import * as drive from "./drive.js";
 import { classify } from "./media-index.js";
 import { UploadSession, authorDatalist, destination, guessCategory } from "./uploader.js";
@@ -86,13 +86,14 @@ export async function openTransfer() {
       <div class="form-group"><label>${localize("Upload.Author")}</label><input type="text" name="author" placeholder="${localize("Transfer.AuthorPlaceholder")}" list="gdms-transfer-authors"></div>
       <div class="form-group"><label><input type="checkbox" name="loose"> ${localize("Transfer.Loose")}</label></div>
       <div class="form-group"><label><input type="checkbox" name="convert" ${getSetting("convertImages") || getSetting("convertAudio") ? "checked" : ""}> ${localize("Upload.Convert")}</label></div>
+      <div class="form-group"><label><input type="checkbox" name="skip" checked> ${localize("Upload.SkipExisting")}</label></div>
       ${authorDatalist("gdms-transfer-authors")}
     </form>`,
     buttons: [{
       action: "next", label: localize("Transfer.Next"), icon: "fa-solid fa-arrow-right", default: true,
       callback: (ev, b) => {
         const f = b.form.elements;
-        return { source: f.source.value, author: f.author.value.trim(), loose: f.loose.checked, convert: f.convert.checked };
+        return { source: f.source.value, author: f.author.value.trim(), loose: f.loose.checked, convert: f.convert.checked, skip: f.skip.checked };
       }
     }, { action: "cancel", label: localize("Cancel") }],
     rejectClose: false
@@ -130,42 +131,54 @@ export async function openTransfer() {
   if (!Array.isArray(step2)) return;
   if (step1.author) await setSetting("lastAuthor", step1.author);
 
-  const session = new UploadSession({ convert: step1.convert });
+  const session = new UploadSession({ convert: step1.convert, skipExisting: step1.skip });
   const progress = notifyProgress(localize("Transfer.Running"));
   let exported = 0;
+  let scenesDone = 0;
   const failed = [];
   try {
-    for (const [i, item] of step2.entries()) {
-      progress.update(`${localize("Transfer.Scene")} ${i + 1}/${step2.length}: ${item.name}`);
+    // Scenes go two at a time; each scene uploads its own files in parallel too.
+    await mapLimit(step2, 2, async item => {
       try {
-        await exportSceneData(await item.load(), { author, packName: item.name.replace(/\s*\([^)]*\)$/, ""), session });
+        await exportSceneData(await item.load(), { author, packName: item.name.replace(/\s*\([^)]*\)$/, ""), session, group: true });
         exported++;
       } catch (err) {
+        if (err.code === "auth") throw err;
         console.error(err);
         failed.push(item.name);
       }
-    }
+      progress.update(`${localize("Transfer.Scene")} ${session.progressText(++scenesDone, step2.length)}`);
+    });
     let loose = 0;
     if (step1.loose && mod) {
       const files = (await browseAll(`modules/${mod.id}`)).filter(p => ["image", "video", "audio"].includes(classify({ name: p })));
-      for (const [i, path] of files.entries()) {
-        progress.update(`${localize("Transfer.Files")} ${i + 1}/${files.length}`);
-        if (session.sources.has(path)) continue; // already uploaded as part of a scene
-        let response = await fetch(encodeURI(path)).catch(() => null);
-        if (!response?.ok) response = await fetch(path).catch(() => null);
-        if (!response?.ok) continue;
-        const blob = await response.blob();
-        const name = decodeURIComponent(path.split("/").pop());
-        const category = await guessCategory(blob, name, path);
-        const rel = path.split("/").slice(2, -1).join(" ").trim();
-        const segments = destination(category, author, category === "maps" ? `${mod.title} ${rel}`.trim() : mod.title, name);
-        await session.put(blob, name, segments, { sourceKey: path });
-        loose++;
-      }
+      let filesDone = 0;
+      await mapLimit(files, uploadConcurrency(), async path => {
+        try {
+          if (session.sources.has(path)) return; // already uploaded as part of a scene
+          let response = await fetch(encodeURI(path)).catch(() => null);
+          if (!response?.ok) response = await fetch(path).catch(() => null);
+          if (!response?.ok) return;
+          const blob = await response.blob();
+          const name = decodeURIComponent(path.split("/").pop());
+          const category = await guessCategory(blob, name, path);
+          // Maps are grouped by name (numbers and variants stripped), the rest goes under the module title.
+          const segments = destination(category, author, category === "maps" ? "" : mod.title, name);
+          await session.put(blob, name, segments, { sourceKey: path });
+          loose++;
+        } catch (err) {
+          if (err.code === "auth") throw err;
+          console.error(`Transfer of ${path} failed`, err);
+          failed.push(path.split("/").pop());
+        } finally {
+          progress.update(`${localize("Transfer.Files")} ${session.progressText(++filesDone, files.length)}`);
+        }
+      });
     }
     await session.finish();
     notify("info", "Transfer.Done", { scenes: exported, files: session.uploaded, loose });
-    if (failed.length) notify("warn", "Transfer.Failed", { count: failed.length, names: failed.join(", ") });
+    if (session.skipped) notify("info", "Upload.Skipped", { count: session.skipped });
+    if (failed.length) notify("warn", "Transfer.Failed", { count: failed.length, names: failed.slice(0, 10).join(", ") });
   } catch (err) {
     console.error(err);
     ui.notifications.error(err.message);

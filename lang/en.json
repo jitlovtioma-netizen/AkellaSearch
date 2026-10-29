@@ -18,7 +18,12 @@
       "PackHint": "The upload contains a scene JSON: all files go into one Maps/<author>/<folder>, and JSON references are updated to the new names.",
       "SortHint": "Maps go to Maps/<author>/<map name>, tokens to Tokens/<author>, music to Music/<author>, and so on.",
       "ToFolder": "Auto-sorting is off: files go into {folder}.",
-      "Convert": "Convert png/jpg → webp and mp3/wav/flac → ogg"
+      "Convert": "Convert png/jpg → webp and mp3/wav/flac → ogg",
+      "SkipExisting": "Skip files already on Drive (resumes an interrupted upload)",
+      "ManyHint": "Files are sent {concurrency} at a time. If the upload stops, run it again with the same files: uploaded ones are skipped.",
+      "SkippedCount": "skipped {count}",
+      "Skipped": "Skipped files already on Drive: {count}.",
+      "Failed": "{count} files failed: {names}. Run the upload again; uploaded files are skipped."
     },
     "UploadHint": "Upload files into the selected Drive folder (you can also drop files on this window)",
     "SignIn": "Sign in with Google",
@@ -82,7 +87,8 @@
       "BadJson": "The file is not valid JSON.",
       "NotAScene": "No scene data found in the file.",
       "NoScene": "Open a scene first.",
-      "CannotPlace": "This file type cannot be placed on the canvas."
+      "CannotPlace": "This file type cannot be placed on the canvas.",
+      "SignInExpired": "Google sign-in is no longer valid (access revoked, or the app is in Testing mode where sign-in lasts 7 days). Sign in again."
     },
     "Import": {
       "Title": "Import scene",
@@ -140,7 +146,7 @@
       },
       "oauthClientId": {
         "Name": "OAuth Client ID",
-        "Hint": "Only needed to upload files and scenes. Type “Web application”; add your Foundry address to Authorized JavaScript origins."
+        "Hint": "Only needed to upload. Type “Web application”. Add an address like http://localhost:30000/modules/akella-search/oauth.html to Authorized redirect URIs (the exact one is shown in the sign-in window)."
       },
       "storageSource": {
         "Name": "Foundry storage",
@@ -181,6 +187,14 @@
       "convertOnImport": {
         "Name": "Convert when copying into Foundry",
         "Hint": "Save png/mp3 files already on Drive to the Foundry server as webp/ogg."
+      },
+      "oauthClientSecret": {
+        "Name": "OAuth Client secret",
+        "Hint": "The OAuth client secret (Credentials → your client → Client secret). Stored only in this browser/app. Keeps you signed in past one hour."
+      },
+      "uploadConcurrency": {
+        "Name": "Parallel uploads",
+        "Hint": "How many files to send to Drive at once. 6 suits most connections; lower it on slow internet."
       }
     },
     "TransferHint": "Copy the scenes of a map module, or of this world, to Drive",
@@ -228,6 +242,26 @@
       "NoScenes": "This source has no scenes.",
       "Done": "{scenes} scenes transferred, {files} files uploaded ({loose} loose)",
       "Failed": "{count} scenes failed ({names}). See the console (F12)."
+    },
+    "Auth": {
+      "Title": "Google sign-in",
+      "Step1": "Press the button below. The Google sign-in page opens (in the Foundry app it opens in your normal browser, that is fine).",
+      "Step2": "Sign in and allow access to Google Drive.",
+      "Step3": "If this window did not close by itself, copy the code from the “Akella Search” page and paste it here. You only need to do this once.",
+      "Open": "Open Google sign-in page",
+      "Code": "Code from the page",
+      "Finish": "Sign in",
+      "Done": "Signed in to Google. The sign-in is kept and will not expire after an hour.",
+      "MissingClient": "Set the OAuth Client ID and Client secret in the module settings.",
+      "RedirectHint": "This address must be listed in Authorized redirect URIs of your OAuth client:"
+    },
+    "Regroup": {
+      "Title": "Merge map folders",
+      "Hint": "Merge folders like “001 Ground Floor”, “002 Ground Floor” into one “Ground Floor” folder. File names stay the same.",
+      "Body": "Folders to merge: {folders}, resulting in {groups}. Examples:",
+      "Running": "Merging folders…",
+      "Nothing": "Nothing to merge: folders are already grouped.",
+      "Done": "Done: merged {folders} folders, moved {files} files. Empty folders went to the Drive trash."
     }
   }
 }

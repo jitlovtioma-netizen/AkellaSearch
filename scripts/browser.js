@@ -7,7 +7,7 @@ import * as drive from "./drive.js";
 import { cachedPath, ensureLocal } from "./cache.js";
 import { KINDS, mediaIndex } from "./media-index.js";
 import { createSceneFromMedia, importPack } from "./scene-packs.js";
-import { convertExisting, uploadWithDialog } from "./uploader.js";
+import { convertExisting, filesFromDrop, regroupFolders, uploadWithDialog } from "./uploader.js";
 import { openTransfer } from "./transfer.js";
 import { DRAG_TYPE, placeMedia, viewCenter } from "./placement.js";
 
@@ -38,7 +38,8 @@ export class MediaBrowser extends HandlebarsApplicationMixin(ApplicationV2) {
       addToPlaylist: MediaBrowser.#onAddToPlaylist,
       openDrive: MediaBrowser.#onOpenDrive,
       transfer: MediaBrowser.#onTransfer,
-      convertDrive: MediaBrowser.#onConvertDrive
+      convertDrive: MediaBrowser.#onConvertDrive,
+      regroup: MediaBrowser.#onRegroup
     }
   };
 
@@ -158,7 +159,9 @@ export class MediaBrowser extends HandlebarsApplicationMixin(ApplicationV2) {
         html.classList.remove("gdms-dropping");
         if (!ev.dataTransfer?.files?.length || !game.user.isGM) return;
         ev.preventDefault();
-        this.#uploadFiles([...ev.dataTransfer.files]);
+        // Read the entries now: the DataTransfer is emptied once the event returns.
+        const pending = filesFromDrop(ev.dataTransfer);
+        this.#run(async () => this.#uploadFiles(await pending));
       });
     }
   }
@@ -205,8 +208,8 @@ export class MediaBrowser extends HandlebarsApplicationMixin(ApplicationV2) {
     this.render();
   }
 
-  static #onSignOut() {
-    drive.signOut();
+  static async #onSignOut() {
+    await this.#run(() => drive.signOut());
     this.render();
   }
 
@@ -321,6 +324,11 @@ export class MediaBrowser extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #onTransfer() {
     await this.#run(() => openTransfer());
+  }
+
+  static async #onRegroup() {
+    await this.#run(() => regroupFolders(this.state.folder));
+    this.render();
   }
 
   static async #onConvertDrive() {
